@@ -53,10 +53,15 @@ local exportSettings = {
 
 }
 
+function extract_proj_info()
+  local catalog = LrApplication:activeCatalog()
+  local photos = { }
 
-local function exportPhotos(context)
+  return "apa", photos
+end
 
-  log( "showModalMessage function entered." )
+function export(context)
+
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
   local progressScope = LrProgressScope {
@@ -64,6 +69,9 @@ local function exportPhotos(context)
     functionContext = context,
   }
 
+  local proj_name,photo_list = extract_proj_info()
+  LrDialogs.message("Panorama: " .. proj_name .. " photos " .. #photo_list)
+  
   local catalog = LrApplication:activeCatalog()
 
   local photos = catalog:getMultipleSelectedOrAllPhotos()
@@ -95,13 +103,10 @@ local function exportPhotos(context)
     end
   end)
 
-  log("hepp " .. #exports)
   local exportSession = LrExportSession{
     exportSettings = exportSettings,
     photosToExport = exports,
   }
-  log("happ")
-
 
   for i,rendition in exportSession:renditions() do
     local success, pathOrMessage = rendition:waitForRender()
@@ -112,11 +117,20 @@ local function exportPhotos(context)
   for key,value in pairs(exportmap) do
     log("export " .. key:getFormattedMetadata('fileName') .. " -> " .. value['top']:getFormattedMetadata('fileName') .. ' ' .. value['path'])
   end
-  LrDialogs.message( "ExportMenuItem Selected", "Hello World!", "info" );
-  log( "showModalMessage function exiting." )
-	
+
 end
 
-LrFunctionContext.postAsyncTaskWithContext('export', exportPhotos)
 
+function make_project(context)
+
+
+end
+
+function analyze(context)
+
+end
+
+function stitch(context)
+
+end
 
