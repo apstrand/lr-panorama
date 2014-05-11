@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+# http://wiki.panotools.org/Panorama_scripting_in_a_nutshell
+
+tools=/Applications/Hugin/HuginTools
+
+name=$1
+proj=$name.pto
+
+$tools/cpfind --multirow -o "$proj" "$proj"
+$tools/celeste_standalone -i "$proj" -o "$proj" -d $tools/../Hugin.app/Contents/Resources/xrc/celeste.model 
+$tools/cpclean -o "$proj" "$proj"
+
+$tools/autooptimiser -a -l -s -m -o "$proj" "$proj"
+
+$tools/pano_modify -o "$proj" --center --straighten --canvas=AUTO --crop=AUTO "$proj"
+
+
+

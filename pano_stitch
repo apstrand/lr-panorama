@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+# http://wiki.panotools.org/Panorama_scripting_in_a_nutshell
+
+tools=/Applications/Hugin/HuginTools
+
+name=$1
+shift
+proj=$name.pto
+
+$tools/pto2mk -o "$name.mk" -p "$name" "$proj"
+make -f "$name.mk" all
+make -f "$name.mk" clean
+
+
+
