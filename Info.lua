@@ -31,8 +31,8 @@ return {
       file = "PanoStitch.lua",
     },
     {
-      ttile = "Hugin",
-      file ="Hugin.lua",
+      title = "Hugin",
+      file = "Hugin.lua",
     },
   },
 

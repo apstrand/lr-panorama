@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -e
+
+here=`dirname $0`
+
+src=$1
+dst=$2
+
+"$here/exiftool" -overwrite_original -tagsFromFile "$src" \
+  -ImageDescription \
+  -DateTimeOriginal -CreateDate \
+  -SerialNumber -Artist -Model -Make \
+  -FocalLength -ExposureTime -FNumber -ExposureProgram -ISO \
+  -CameraID -InternalSerialNumber \
+  -LensModel "$dst" >> /tmp/apa 2>&1
+
+
+

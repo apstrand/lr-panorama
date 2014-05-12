@@ -1,6 +1,4 @@
 
-dump = require 'ser'
-
 local LrLogger = import 'LrLogger'
 
 local logger = LrLogger( 'exportLogger' )

@@ -4,6 +4,6 @@ local LrFunctionContext = import 'LrFunctionContext'
 require 'Panorama'
 
 
-LrFunctionContext.postAsyncTaskWithContext('export', hugin)
+LrFunctionContext.postAsyncTaskWithContext('hugin', hugin)
 
 

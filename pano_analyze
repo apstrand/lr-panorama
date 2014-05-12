@@ -11,7 +11,7 @@ name=$2
 proj=$path/$name.pto
 
 $tools/cpfind --multirow -o "$proj" "$proj"
-$tools/celeste_standalone -i "$proj" -o "$proj" -d $tools/../Hugin.app/Contents/Resources/xrc/celeste.model 
+# $tools/celeste_standalone -i "$proj" -o "$proj" -d $tools/../Hugin.app/Contents/Resources/xrc/celeste.model 
 $tools/cpclean -o "$proj" "$proj"
 
 $tools/autooptimiser -a -l -s -m -o "$proj" "$proj"

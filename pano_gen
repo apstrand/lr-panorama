@@ -12,23 +12,21 @@ name=$1
 shift
 proj="$path/$name.pto"
 
-rm -f /tmp/apa
-echo "proj $proj" >> /tmp/apa
-
 rm -f "$proj"
 
-echo $tools/pto_gen -p 1 -o "$proj" "$1" >> /tmp/apa
-$tools/pto_gen -p 1 -o "$proj" "$1" 2>>/tmp/apa
-echo "img1 $1" >> /tmp/apa
+$tools/pto_gen -p 1 -o "$proj" "$1"
 shift
 
 while [ -n "$1" ]; do
   img="$1"
-  echo "img $img" >> /tmp/apa
   tmp=`mktemp -t pano`
   $tools/pto_gen -p 1 -o "$tmp" "$img"
   $tools/pto_merge -o "$proj" "$proj" "$tmp"
   rm "$tmp"
   shift
 done
+
+perl -p -i -e 's/hugin_outputImageType tif/hugin_outputImageType jpg/' "$proj"
+perl -p -i -e 's/hugin_outputJPEGQuality 100/hugin_outputJPEGQuality 80/' "$proj"
+# perl -p -i -e 's/hugin_outputImageTypeCompression LZW/hugin_outputImageTypeCompression DEFLATE/' "$proj"
 

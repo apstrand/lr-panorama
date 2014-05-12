@@ -20,8 +20,8 @@ echo $name
 echo $proj
 $tools/pto2mk -o "$name.mk" -p "$name" "$proj"
 export PATH="$PATH:$tools"
-make -f "$name.mk" all
-make -f "$name.mk" clean
+make -f "$name.mk" all >> /tmp/apa 2>&1
+make -f "$name.mk" clean >> /tmp/apa 2>&1
 
-mv "$work/$name.tif" "$path/$name.tif"
+mv "$work/$name.jpg" "$path/${name}rama.jpeg" >>/tmp/apa 2>&1
 

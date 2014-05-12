@@ -5,8 +5,8 @@ local LrFunctionContext = import 'LrFunctionContext'
 require 'Panorama'
 
 local function make_panorama(context)
-  export(context)
-  make_panorama(context)
+  exportmap = export(context)
+  make_project(context, exportmap)
   analyze(context)
   stitch(context)
 end

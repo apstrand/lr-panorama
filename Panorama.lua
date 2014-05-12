@@ -8,6 +8,7 @@ local LrFunctionContext = import 'LrFunctionContext'
 local LrProgressScope = import 'LrProgressScope'
 local LrShell = import 'LrShell'
 local LrPathUtils = import 'LrPathUtils'
+local LrFileUtils = import 'LrFileUtils'
 
 local myLogger = LrLogger( 'exportLogger' )
 myLogger:enable( "print" ) -- Pass either a string or a table of actions.
@@ -30,18 +31,22 @@ function concat_quote_args(args)
   return table.concat(temp, " ")
 end
 
+local hugin_path = "/Applications/Hugin/Hugin.app"
+
+local catalog = LrApplication:activeCatalog()
+local catalog_folder = LrPathUtils.parent(catalog:getPath())
+local temp_folder = LrPathUtils.child(catalog_folder, "PanoramaTemp")
+
 local exportSettings = {
---  LR_export_destinationPathPrefix = '/Users/peter/Pictures/PanoExport/',
---  LR_export_destinationType = "specificFolder",
   LR_collisionHandling = "overwrite",
   LR_embeddedMetadataOption = "all",
   LR_exportServiceProvider = "com.adobe.ag.export.file",
   LR_exportServiceProviderTitle = "Hard Drive",
   LR_export_bitDepth = 16,
   LR_export_colorSpace = "AdobeRGB",
-  LR_export_destinationPathSuffix = "__PanoramaTemp",
-  LR_export_destinationType = "sourceFolder",
-  LR_export_useSubfolder = true,
+  LR_export_destinationPathPrefix = temp_folder,
+  LR_export_destinationType = "specificFolder",
+  LR_export_useSubfolder = false,
   LR_export_videoFileHandling = "include",
   LR_export_videoFormat = "4e49434b-4832-3634-fbfb-fbfbfbfbfbfb",
   LR_export_videoPreset = "original",
@@ -76,21 +81,19 @@ function extract_proj_info()
   log("selected: " .. selected:getFormattedMetadata('fileName'))
 
   local stack = selected:getRawMetadata('stackInFolderMembers')
-  log("stack: " .. #stack)
 
   for i,photo in ipairs(stack) do
-    log("consider: " .. photo:getFormattedMetadata('fileName'))
     if photo:getRawMetadata('fileFormat') ~= 'TIFF' then
       table.insert(photos, {photo=photo,path = photo:getRawMetadata('path'), name = photo:getFormattedMetadata('fileName')})
     end
   end
-  log("photos: " .. #photos)
 
   table.sort(photos, function(p1, p2)
     return p1.name < p2.name
   end)
   log("sorted: " .. #photos)
-  proj=string.gsub(photos[1].name, "\.[^.]*$", "_pano", 1)
+  local proj_suffix = "_" .. #photos .. "_pano"
+  proj=string.gsub(photos[1].name, "\.[^.]*$", proj_suffix, 1)
   path=LrPathUtils.parent(photos[1].photo:getRawMetadata('path'))
   log("proj: " .. proj)
   return path, proj, photos
@@ -104,6 +107,9 @@ function export(context)
     title = 'Panorama export..',
     functionContext = context,
   }
+
+
+  pcall(LrFileUtils.createDirectory, temp_folder)
 
   local proj_path,proj_name,photo_list = extract_proj_info()
   
@@ -139,7 +145,7 @@ function make_project(context, exportmap)
 
   local proj_path,proj_name,photo_list = extract_proj_info()
 
-  exportpath = LrPathUtils.child(proj_path, exportSettings.LR_export_destinationPathSuffix)
+  exportpath = temp_folder
 
   if exportmap == nil then
     exportmap = { }
@@ -164,8 +170,8 @@ function make_project(context, exportmap)
     table.insert(args, photo.path)
   end
 
-  log("cmd " .. concat_quote_args(args))
   local cmdline = concat_quote_args(args)
+  log("cmd " .. cmdline)
   LrTasks.execute(cmdline)
 
 end
@@ -189,6 +195,7 @@ function analyze(context)
   table.insert(args, proj_name)
 
   local cmdline = concat_quote_args(args)
+  log("cmd " .. cmdline)
   LrTasks.execute(cmdline)
 end
 
@@ -208,19 +215,46 @@ function stitch(context)
   table.insert(args, cmd)
   table.insert(args, proj_path)
   table.insert(args, proj_name)
-  table.insert(args, LrPathUtils.child(proj_path, exportSettings.LR_export_destinationPathSuffix))
+  table.insert(args, temp_folder)
 
   local cmdline = concat_quote_args(args)
+  log("cmd " .. cmdline)
   LrTasks.execute(cmdline)
 
   local catalog = LrApplication:activeCatalog()
-  local pano_path = LrPathUtils.child(proj_path, proj_name .. ".tif")
+  local pano_path = LrPathUtils.child(proj_path, proj_name .. "rama.jpeg")
+  local base_path = photo_list[1].path
+
+  log("fixup " .. pano_path .. " from " .. base_path)
+  cmd = LrPathUtils.child(path, "pano_fixup")
+  args = { }
+  table.insert(args, cmd)
+  table.insert(args, base_path)
+  table.insert(args, pano_path)
+  cmdline = concat_quote_args(args)
+  log("cmd " .. cmdline)
+  LrTasks.execute(cmdline)
+
+
   log("adding " .. pano_path)
-  if catalog:findPhotoByPath(pano_path) == nil then
+
+  local pano_photo = catalog:findPhotoByPath(pano_path)
+  if pano_photo == nil then
     catalog:withWriteAccessDo("add panorama", function(context)
-      catalog:addPhoto(pano_path, photo_list[1].photo, 'above')
+      pano_photo = catalog:addPhoto(pano_path, photo_list[1].photo, 'above')
     end)
   end
+
+end
+
+function hugin(context)
+  
+  LrDialogs.attachErrorDialogToFunctionContext(context)
+
+  local proj_path,proj_name,photo_list = extract_proj_info()
+
+  local proj_file = LrPathUtils.addExtension(LrPathUtils.child(proj_path, proj_name), "pto")
+  LrTasks.execute("open -a Hugin " .. quote(proj_file))
 
 end
 
