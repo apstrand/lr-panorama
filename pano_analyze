@@ -6,8 +6,9 @@ set -e
 
 tools=/Applications/Hugin/HuginTools
 
-name=$1
-proj=$name.pto
+path=$1
+name=$2
+proj=$path/$name.pto
 
 $tools/cpfind --multirow -o "$proj" "$proj"
 $tools/celeste_standalone -i "$proj" -o "$proj" -d $tools/../Hugin.app/Contents/Resources/xrc/celeste.model 

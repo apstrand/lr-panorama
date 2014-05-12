@@ -19,6 +19,10 @@ return {
       file = "PanoExport.lua",
     },
     {
+      title = "Panorama Proj",
+      file = "PanoProj.lua",
+    },
+    {
       title = "Panorama Analyze",
       file = "PanoAnalyze.lua",
     },

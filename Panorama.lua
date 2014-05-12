@@ -6,6 +6,8 @@ local LrTasks = import 'LrTasks'
 local LrExportSession = import 'LrExportSession'
 local LrFunctionContext = import 'LrFunctionContext'
 local LrProgressScope = import 'LrProgressScope'
+local LrShell = import 'LrShell'
+local LrPathUtils = import 'LrPathUtils'
 
 local myLogger = LrLogger( 'exportLogger' )
 myLogger:enable( "print" ) -- Pass either a string or a table of actions.
@@ -13,6 +15,19 @@ myLogger:enable( "print" ) -- Pass either a string or a table of actions.
 
 local function log( message )
   myLogger:trace( " PanoExport: " .. message )	
+end
+
+function quote(str)
+  return string.gsub(str, "[ ]+", "\\%1")
+end
+
+function concat_quote_args(args)
+  local temp = { }
+  for i, arg in ipairs(args) do
+    local s = quote(arg)
+    table.insert(temp, s)
+  end
+  return table.concat(temp, " ")
 end
 
 local exportSettings = {
@@ -57,7 +72,28 @@ function extract_proj_info()
   local catalog = LrApplication:activeCatalog()
   local photos = { }
 
-  return "apa", photos
+  local selected = catalog:getTargetPhoto()
+  log("selected: " .. selected:getFormattedMetadata('fileName'))
+
+  local stack = selected:getRawMetadata('stackInFolderMembers')
+  log("stack: " .. #stack)
+
+  for i,photo in ipairs(stack) do
+    log("consider: " .. photo:getFormattedMetadata('fileName'))
+    if photo:getRawMetadata('fileFormat') ~= 'TIFF' then
+      table.insert(photos, {photo=photo,path = photo:getRawMetadata('path'), name = photo:getFormattedMetadata('fileName')})
+    end
+  end
+  log("photos: " .. #photos)
+
+  table.sort(photos, function(p1, p2)
+    return p1.name < p2.name
+  end)
+  log("sorted: " .. #photos)
+  proj=string.gsub(photos[1].name, "\.[^.]*$", "_pano", 1)
+  path=LrPathUtils.parent(photos[1].photo:getRawMetadata('path'))
+  log("proj: " .. proj)
+  return path, proj, photos
 end
 
 function export(context)
@@ -69,40 +105,16 @@ function export(context)
     functionContext = context,
   }
 
-  local proj_name,photo_list = extract_proj_info()
-  LrDialogs.message("Panorama: " .. proj_name .. " photos " .. #photo_list)
+  local proj_path,proj_name,photo_list = extract_proj_info()
   
-  local catalog = LrApplication:activeCatalog()
-
-  local photos = catalog:getMultipleSelectedOrAllPhotos()
-  log("photos " .. #photos)
-
-  panos = { }
-  for i,photo in ipairs(photos) do
-    local name = photo:getFormattedMetadata('fileName')
-    local is_stack = photo:getRawMetadata('isInStackInFolder') -- isInStackInFolder')
-    local is_collapsed = photo:getRawMetadata('stackInFolderIsCollapsed')
-    if is_stack and not is_collapsed then
-      local top = photo:getRawMetadata('topOfStackInFolderContainingPhoto')
-      log("pano: " .. photo:getFormattedMetadata('fileName') .. " top: " .. top:getFormattedMetadata('fileName'))
-      if not panos[top] then
-        panos[top] = { }
-      end
-      table.insert(panos[top], photo)
-    end
+  exports = { }
+  exportmap = { }
+  for i,photo in ipairs(photo_list) do
+    table.insert(exports, photo.photo)
+    exportmap[photo.photo] = { }
   end
 
-  local exports = { }
-  local exportmap = { }
-  table.foreach(panos, function (top,parts)
-    log("parts " .. tostring(parts) .. " " .. #parts)
-    for i,part in ipairs(parts) do
-      exportmap[part] = { }
-      exportmap[part]['top'] = top
-      table.insert(exports, part)
-    end
-  end)
-
+  log("exports " .. #exports)
   local exportSession = LrExportSession{
     exportSettings = exportSettings,
     photosToExport = exports,
@@ -115,22 +127,100 @@ function export(context)
   end
 
   for key,value in pairs(exportmap) do
-    log("export " .. key:getFormattedMetadata('fileName') .. " -> " .. value['top']:getFormattedMetadata('fileName') .. ' ' .. value['path'])
+    log("export " .. proj_name .. ": " .. key:getFormattedMetadata('fileName') .. " -> " .. value['path'])
   end
 
+  return exportmap
 end
 
+function make_project(context, exportmap)
 
-function make_project(context)
+  LrDialogs.attachErrorDialogToFunctionContext(context)
 
+  local proj_path,proj_name,photo_list = extract_proj_info()
+
+  exportpath = LrPathUtils.child(proj_path, exportSettings.LR_export_destinationPathSuffix)
+
+  if exportmap == nil then
+    exportmap = { }
+    for i,photo in ipairs(photo_list) do
+      local fake = LrPathUtils.replaceExtension(photo.name, "tif")
+      local absfake = LrPathUtils.makeAbsolute(fake, exportpath)
+      exportmap[photo] = {path = absfake}
+    end
+  end
+  log("map " .. #exportmap)
+  
+  local args = { }
+  local path = _PLUGIN.path
+  cmd = LrPathUtils.child(path, "pano_gen")
+  table.insert(args, cmd)
+  table.insert(args, proj_path)
+  table.insert(args, proj_name)
+
+  files = { }
+  for key,photo in pairs(exportmap) do
+    log("add " .. photo.path)
+    table.insert(args, photo.path)
+  end
+
+  log("cmd " .. concat_quote_args(args))
+  local cmdline = concat_quote_args(args)
+  LrTasks.execute(cmdline)
 
 end
 
 function analyze(context)
 
+  LrDialogs.attachErrorDialogToFunctionContext(context)
+
+  local progressScope = LrProgressScope {
+    title = 'Panorama analyzing..',
+    functionContext = context,
+  }
+
+  local proj_path,proj_name,photo_list = extract_proj_info()
+
+  local args = { }
+  local path = _PLUGIN.path
+  cmd = LrPathUtils.child(path, "pano_analyze")
+  table.insert(args, cmd)
+  table.insert(args, proj_path)
+  table.insert(args, proj_name)
+
+  local cmdline = concat_quote_args(args)
+  LrTasks.execute(cmdline)
 end
 
 function stitch(context)
+  LrDialogs.attachErrorDialogToFunctionContext(context)
+
+  local progressScope = LrProgressScope {
+    title = 'Panorama stitching..',
+    functionContext = context,
+  }
+
+  local proj_path,proj_name,photo_list = extract_proj_info()
+
+  local args = { }
+  local path = _PLUGIN.path
+  cmd = LrPathUtils.child(path, "pano_stitch")
+  table.insert(args, cmd)
+  table.insert(args, proj_path)
+  table.insert(args, proj_name)
+  table.insert(args, LrPathUtils.child(proj_path, exportSettings.LR_export_destinationPathSuffix))
+
+  local cmdline = concat_quote_args(args)
+  LrTasks.execute(cmdline)
+
+  local catalog = LrApplication:activeCatalog()
+  local pano_path = LrPathUtils.child(proj_path, proj_name .. ".tif")
+  log("adding " .. pano_path)
+  if catalog:findPhotoByPath(pano_path) == nil then
+    catalog:withWriteAccessDo("add panorama", function(context)
+      catalog:addPhoto(pano_path, photo_list[1].photo, 'above')
+    end)
+  end
 
 end
 

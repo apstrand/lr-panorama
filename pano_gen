@@ -6,17 +6,25 @@ set -e
 
 tools=/Applications/Hugin/HuginTools
 
+path=$1
+shift
 name=$1
 shift
-proj=$name.pto
+proj="$path/$name.pto"
+
+rm -f /tmp/apa
+echo "proj $proj" >> /tmp/apa
 
 rm -f "$proj"
 
-$tools/pto_gen -p 1 -o "$proj" "$1"
+echo $tools/pto_gen -p 1 -o "$proj" "$1" >> /tmp/apa
+$tools/pto_gen -p 1 -o "$proj" "$1" 2>>/tmp/apa
+echo "img1 $1" >> /tmp/apa
 shift
 
 while [ -n "$1" ]; do
   img="$1"
+  echo "img $img" >> /tmp/apa
   tmp=`mktemp -t pano`
   $tools/pto_gen -p 1 -o "$tmp" "$img"
   $tools/pto_merge -o "$proj" "$proj" "$tmp"

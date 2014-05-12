@@ -6,13 +6,22 @@ set -e
 
 tools=/Applications/Hugin/HuginTools
 
-name=$1
-shift
-proj=$name.pto
+path=$1
+name=$2
+temp=$3
+proj=$path/$name.pto
 
+work="$temp"
+mkdir -p "$work"
+
+cd "$work"
+
+echo $name
+echo $proj
 $tools/pto2mk -o "$name.mk" -p "$name" "$proj"
+export PATH="$PATH:$tools"
 make -f "$name.mk" all
 make -f "$name.mk" clean
 
-
+mv "$work/$name.tif" "$path/$name.tif"
 
