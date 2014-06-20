@@ -83,7 +83,8 @@ function extract_proj_info()
   local stack = selected:getRawMetadata('stackInFolderMembers')
 
   for i,photo in ipairs(stack) do
-    if photo:getRawMetadata('fileFormat') ~= 'TIFF' then
+    if photo:getRawMetadata('fileFormat') ~= 'JPG' and photo:getRawMetadata('fileFormat') ~= 'TIFF' then
+      log("insert: " .. photo:getRawMetadata('path'))
       table.insert(photos, {photo=photo,path = photo:getRawMetadata('path'), name = photo:getFormattedMetadata('fileName')})
     end
   end
@@ -91,8 +92,8 @@ function extract_proj_info()
   table.sort(photos, function(p1, p2)
     return p1.name < p2.name
   end)
-  log("sorted: " .. #photos)
   local proj_suffix = "_" .. #photos .. "_pano"
+  log("photos: " .. #photos)
   proj=string.gsub(photos[1].name, "\.[^.]*$", proj_suffix, 1)
   path=LrPathUtils.parent(photos[1].photo:getRawMetadata('path'))
   log("proj: " .. proj)
@@ -155,7 +156,6 @@ function make_project(context, exportmap)
       exportmap[photo] = {path = absfake}
     end
   end
-  log("map " .. #exportmap)
   
   local args = { }
   local path = _PLUGIN.path
@@ -173,6 +173,7 @@ function make_project(context, exportmap)
   local cmdline = concat_quote_args(args)
   log("cmd " .. cmdline)
   LrTasks.execute(cmdline)
+  log("done")
 
 end
 
