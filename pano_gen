@@ -14,17 +14,7 @@ proj="$path/$name.pto"
 
 rm -f "$proj"
 
-$tools/pto_gen -p 1 -o "$proj" "$1"
-shift
-
-while [ -n "$1" ]; do
-  img="$1"
-  tmp=`mktemp -t pano`
-  $tools/pto_gen -p 1 -o "$tmp" "$img"
-  $tools/pto_merge -o "$proj" "$proj" "$tmp"
-  rm "$tmp"
-  shift
-done
+$tools/pto_gen -p 1 -o "$proj" $*
 
 perl -p -i -e 's/hugin_outputImageType tif/hugin_outputImageType jpg/' "$proj"
 perl -p -i -e 's/hugin_outputJPEGQuality 100/hugin_outputJPEGQuality 80/' "$proj"

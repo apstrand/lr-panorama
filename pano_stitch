@@ -5,6 +5,7 @@ set -e
 # http://wiki.panotools.org/Panorama_scripting_in_a_nutshell
 
 tools=/Applications/Hugin/HuginTools
+here=`dirname $0`
 
 path=$1
 name=$2
@@ -19,7 +20,7 @@ cd "$work"
 echo $name
 echo $proj
 $tools/pto2mk -o "$name.mk" -p "$name" "$proj"
-export PATH="$PATH:$tools"
+export PATH="$PATH:$tools:$here"
 make -f "$name.mk" all >> /tmp/apa 2>&1
 make -f "$name.mk" clean >> /tmp/apa 2>&1
 
