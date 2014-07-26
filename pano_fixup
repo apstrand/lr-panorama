@@ -13,7 +13,7 @@ dst=$2
   -SerialNumber -Artist -Model -Make \
   -FocalLength -ExposureTime -FNumber -ExposureProgram -ISO \
   -CameraID -InternalSerialNumber \
-  -LensModel "$dst" >> /tmp/apa 2>&1
+  -LensModel "$dst" >> /tmp/pano.log 2>&1
 
 
 
