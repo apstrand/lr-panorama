@@ -73,11 +73,13 @@ local exportSettings = {
 
 }
 
-function extract_proj_info()
+function extract_proj_info(selected)
   local catalog = LrApplication:activeCatalog()
   local photos = { }
 
-  local selected = catalog:getTargetPhoto()
+  if selected == nil then
+    selected = catalog:getTargetPhoto()
+  end
   log("selected: " .. selected:getFormattedMetadata('fileName'))
 
   local stack = selected:getRawMetadata('stackInFolderMembers')
@@ -100,7 +102,7 @@ function extract_proj_info()
   return path, proj, photos
 end
 
-function export(context)
+function export(context, selected)
 
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
@@ -112,7 +114,7 @@ function export(context)
 
   pcall(LrFileUtils.createDirectory, temp_folder)
 
-  local proj_path,proj_name,photo_list = extract_proj_info()
+  local proj_path,proj_name,photo_list = extract_proj_info(selected)
   
   exports = { }
   exportmap = { }
@@ -140,11 +142,11 @@ function export(context)
   return exportmap
 end
 
-function make_project(context, exportmap)
+function make_project(context, exportmap, selected)
 
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local proj_path,proj_name,photo_list = extract_proj_info()
+  local proj_path,proj_name,photo_list = extract_proj_info(selected)
 
   exportpath = temp_folder
 
@@ -177,7 +179,7 @@ function make_project(context, exportmap)
 
 end
 
-function analyze(context)
+function analyze(context, selected)
 
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
@@ -186,7 +188,7 @@ function analyze(context)
     functionContext = context,
   }
 
-  local proj_path,proj_name,photo_list = extract_proj_info()
+  local proj_path,proj_name,photo_list = extract_proj_info(selected)
 
   local args = { }
   local path = _PLUGIN.path
@@ -200,7 +202,7 @@ function analyze(context)
   LrTasks.execute(cmdline)
 end
 
-function stitch(context)
+function stitch(context, selected)
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
   local progressScope = LrProgressScope {
@@ -208,7 +210,7 @@ function stitch(context)
     functionContext = context,
   }
 
-  local proj_path,proj_name,photo_list = extract_proj_info()
+  local proj_path,proj_name,photo_list = extract_proj_info(selected)
 
   local args = { }
   local path = _PLUGIN.path
@@ -248,11 +250,11 @@ function stitch(context)
 
 end
 
-function hugin(context)
+function hugin(context, selected)
   
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local proj_path,proj_name,photo_list = extract_proj_info()
+  local proj_path,proj_name,photo_list = extract_proj_info(selected)
 
   local proj_file = LrPathUtils.addExtension(LrPathUtils.child(proj_path, proj_name), "pto")
   LrTasks.execute("open -a Hugin " .. quote(proj_file))
