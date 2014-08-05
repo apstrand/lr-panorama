@@ -85,7 +85,7 @@ function extract_proj_info(selected)
   local stack = selected:getRawMetadata('stackInFolderMembers')
 
   for i,photo in ipairs(stack) do
-    if photo:getRawMetadata('fileFormat') ~= 'JPG' and photo:getRawMetadata('fileFormat') ~= 'TIFF' then
+    if not string.find(photo:getFormattedMetadata('fileName'), "panorama") then
       log("insert: " .. photo:getRawMetadata('path'))
       table.insert(photos, {photo=photo,path = photo:getRawMetadata('path'), name = photo:getFormattedMetadata('fileName')})
     end
@@ -245,7 +245,7 @@ function stitch(context, selected)
   if pano_photo == nil then
     catalog:withWriteAccessDo("add panorama", function(context)
       pano_photo = catalog:addPhoto(pano_path, photo_list[1].photo, 'above')
-    end)
+    end, { timeout = 10 })
   end
 
 end
