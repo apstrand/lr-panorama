@@ -59,7 +59,7 @@ local function exportPhotos(context)
   log( "showModalMessage function entered." )
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local progressScope = LrProgressScope {
+  local progress = LrProgressScope {
     title = 'Panorama export..',
     functionContext = context,
   }
@@ -115,6 +115,7 @@ local function exportPhotos(context)
   LrDialogs.message( "ExportMenuItem Selected", "Hello World!", "info" );
   log( "showModalMessage function exiting." )
 	
+  progress:done()
 end
 
 LrFunctionContext.postAsyncTaskWithContext('export', exportPhotos)

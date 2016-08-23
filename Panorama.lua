@@ -106,7 +106,7 @@ function export(context, selected)
 
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local progressScope = LrProgressScope {
+  local progress = LrProgressScope {
     title = 'Panorama export..',
     functionContext = context,
   }
@@ -139,6 +139,7 @@ function export(context, selected)
     log("export " .. proj_name .. ": " .. key:getFormattedMetadata('fileName') .. " -> " .. value['path'])
   end
 
+  progress:done()
   return exportmap
 end
 
@@ -183,7 +184,7 @@ function analyze(context, selected)
 
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local progressScope = LrProgressScope {
+  local progress = LrProgressScope {
     title = 'Panorama analyzing..',
     functionContext = context,
   }
@@ -200,12 +201,13 @@ function analyze(context, selected)
   local cmdline = concat_quote_args(args)
   log("cmd " .. cmdline)
   LrTasks.execute(cmdline)
+  progress:done()
 end
 
 function stitch(context, selected)
   LrDialogs.attachErrorDialogToFunctionContext(context)
 
-  local progressScope = LrProgressScope {
+  local progress = LrProgressScope {
     title = 'Panorama stitching..',
     functionContext = context,
   }
@@ -248,6 +250,7 @@ function stitch(context, selected)
     end, { timeout = 10 })
   end
 
+  progress:done()
 end
 
 function hugin(context, selected)
