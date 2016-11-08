@@ -132,7 +132,11 @@ function export(context, selected)
   for i,rendition in exportSession:renditions() do
     local success, pathOrMessage = rendition:waitForRender()
     log("rendition " .. i .. " " .. pathOrMessage)
-    exportmap[rendition.photo]['path'] = pathOrMessage
+    if rendition.photo == nil then
+      log(" rendition.photo is nil!")
+    else
+      exportmap[rendition.photo]['path'] = pathOrMessage
+    end
   end
 
   for key,value in pairs(exportmap) do
